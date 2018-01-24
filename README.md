@@ -15,6 +15,7 @@ Once `make` finishes to run, the application will be accessible at http://localh
 - **build**: builds the application.
 - **install**: installs the application and its dependencies.
 - **clean**: cleans the binaries.
+- **test**: runs defined test.
 - **docker-image**: builds a docker image for the application.
 - **docker-container**: creates a container and exposes it at Docker host.
 - **docker-image-clean**: removes the image built for the applications.
