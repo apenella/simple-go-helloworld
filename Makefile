@@ -43,7 +43,7 @@ docker: docker-image-clean docker-image docker-container
 #
 # reference: https://blog.codeship.com/building-minimal-docker-containers-for-go-applications/
 #
-build: clean
+build: clean dep
 	CGO_ENABLED=0 GOOS=linux go build ${LDFLAGS}  -a -o ${BINARY} main.go
 
 #
