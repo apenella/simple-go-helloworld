@@ -8,7 +8,7 @@ BINARY=simple-go-helloworld
 #
 # Values Version and Commit
 VERSION=`cat version`
-COMMIT=`git rev-parse HEAD || echo "unknown"`
+COMMIT=`git rev-parse --short HEAD || echo "unknown"`
 
 #
 # Setup the -ldflags option for go build here, interpolate the variable values

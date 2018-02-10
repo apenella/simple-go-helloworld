@@ -1,5 +1,5 @@
-FROM	scratch
-MAINTAINER	Aleix Penella (aleix.penella [at] gmail.com)
+FROM scratch
+MAINTAINER Aleix Penella (aleix.penella [at] gmail.com)
 
 # set / as working dir
 WORKDIR /
