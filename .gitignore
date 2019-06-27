@@ -20,6 +20,8 @@ bin/*
 .kitchen.local.yml
 
 *.log
+# go packages
+go.sum
 
 # binaries
 simple-go-helloworld
