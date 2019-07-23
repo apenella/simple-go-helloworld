@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,9 +20,6 @@ type Webserver struct {
 
 func NewWebserver(l string) *Webserver {
 	router := http.NewServeMux()
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
 
 	server := &http.Server{
 		Addr:         l,
@@ -46,27 +44,40 @@ func (w *Webserver) AddHandler(uri string, handler Handler) {
 }
 
 func (w *Webserver) LoadHandlers() {
+	mux := w.server.Handler.(*http.ServeMux)
+
 	for uri, handler := range w.Handlers {
-		http.HandleFunc(uri, handler)
+		log.Printf("Registering new handler on %v", uri)
+		mux.HandleFunc(uri, handler)
 	}
 }
 
 func (w *Webserver) Start() {
 
+	done := make(chan bool)
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	go func() {
 		signalType := <-ch
-		signal.Stop(ch)
 		fmt.Println("Exit command received. Exiting...")
-
 		fmt.Println("Received signal type : ", signalType)
 
-		os.Exit(0)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
+		err := w.server.Shutdown(ctx)
+		if err != nil {
+			fmt.Printf("Could not gracefully shutdown the server: %v\n", err)
+		}
+
+		signal.Stop(ch)
+
+		close(done)
 	}()
 
 	w.LoadHandlers()
+	log.Println("Starting server on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+	<-done
 }
