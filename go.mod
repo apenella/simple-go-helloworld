@@ -1,3 +1,3 @@
-module github.com/apenella/simple-go-helloworld
+module simple-go-helloworld
 
 go 1.12
