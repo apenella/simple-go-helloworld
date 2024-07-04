@@ -6,6 +6,8 @@
 *.un~
 pkg/
 
+.bin
+
 # Berkshelf
 .vagrant
 /cookbooks
@@ -22,4 +24,4 @@ bin/*
 *.log
 
 # binaries
-simple-go-helloworld
+simple-go-helloworld*
