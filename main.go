@@ -2,9 +2,10 @@ package main
 
 import (
 	"html/template"
-	"os"
 	"net/http"
-	"simple-go-helloworld/release"
+	"os"
+
+	"github.com/apenella/simple-go-helloworld/release"
 )
 
 type Context struct {
@@ -15,18 +16,18 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 	var hostname string
 	var err error
 
-	hostname, err = os.Hostname() 
+	hostname, err = os.Hostname()
 	if err != nil {
 		hostname = "unknown"
 	}
 
-	context := Context { 
-	 	Version: release.Version,
-	 	Commit: release.Commit,
-	 	Hostname: hostname,
+	context := Context{
+		Version:  release.Version,
+		Commit:   release.Commit,
+		Hostname: hostname,
 	}
 
-	 page := `
+	page := `
 		<html>
 			<head>
 				<title>Simple Go Helloworld</title>
