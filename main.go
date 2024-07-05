@@ -73,10 +73,8 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
 	http.HandleFunc("/", helloworld)
-	err := http.ListenAndServe(":80", nil)
-
+	err := http.ListenAndServe(":8080", nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")
 	} else if err != nil {

@@ -3,6 +3,7 @@
 .DEFAULT_GOAL: print
 
 NAME=simple-go-helloworld
+MOD=github.com/apenella/simple-go-helloworld
 
 # os name and arch
 OS_NAME=$(shell go env GOOS)
@@ -23,10 +24,10 @@ BINARY_DOCKER_WHICH=$(shell command -v $(BINARY_DOCKER))
 VERSION_SEMVAR=version_semver
 VERSION_COMMIT=version_commit
 
-VERSION=`cat $(VERSION_SEMVAR)`
-COMMIT=`git rev-parse --short HEAD || echo "unknown"`
+VERSION=$(shell cat $(VERSION_SEMVAR))
+COMMIT=$(shell git rev-parse --short HEAD || echo "unknown")
 
-LDFLAGS=-ldflags "-X simple-go-helloworld/release.Version=${VERSION} -X simple-go-helloworld/release.Commit=${COMMIT}"
+LDFLAGS=-ldflags "-X $(MOD)/release.Version=${VERSION} -X $(MOD)/release.Commit=${COMMIT}"
 
 print:
 	@echo ""
@@ -66,21 +67,25 @@ bin-version:
 	# calculate it
 	rm -f $(VERSION_COMMIT)
 	@echo $(COMMIT) >> version_commit
-	cp version_commit $(BIN_ROOT)/${BINARY_NATIVE}_version_commit
-	# version is manual by dev to decide.
-	cp version_semver $(BIN_ROOT)/${BINARY_NATIVE}_version_semver
-	
 bin-native: bin-init dep bin-version
 	# for devs
+	cp version_commit $(BIN_ROOT)/${BINARY_NATIVE}_version_commit
+	cp version_semver $(BIN_ROOT)/${BINARY_NATIVE}_version_semver
+
 	CGO_ENABLED=0 GOOS=$(OS_NAME) GOARCH=$(OS_ARCH) go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_NATIVE} .
 bin-docker: bin-init dep bin-version
 	# for docker
+	cp version_commit $(BIN_ROOT)/${BINARY_DOCKER}_version_commit
+	cp version_semver $(BIN_ROOT)/${BINARY_DOCKER}_version_semver
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_DOCKER} .
 
 run-native:
 	$(BINARY_NATIVE)
 run-docker:
 	###
+
+curl:
+	curl http://localhost:8080/
 
 # execute all tests
 test: dep
