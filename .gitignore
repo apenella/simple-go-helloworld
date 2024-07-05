@@ -25,3 +25,4 @@ bin/*
 
 # binaries
 simple-go-helloworld*
+.bin
