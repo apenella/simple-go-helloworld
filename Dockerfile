@@ -6,6 +6,7 @@ WORKDIR /
 
 # copy the binary into container
 COPY ./.bin/simple-go-helloworld_linux_amd64 /
+COPY ./.bin/simple-go-helloworld_linux_amd64_version /
 
 # expose the port where web server is listen to
 EXPOSE 80

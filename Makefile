@@ -1,5 +1,7 @@
 # MAKEFILE for simple-go-helloworld
 
+.DEFAULT_GOAL: print
+
 NAME=simple-go-helloworld
 
 # os name and arch
@@ -43,36 +45,33 @@ print:
 	@echo "LDFLAGS:                $(LDFLAGS)"
 	@echo ""
 
-.DEFAULT_GOAL: print
-
-# define phony targets
-.PHONY: clean install build-native build-linux docker-container docker-container-clear docker-image test dep
-
 # build the binary and deploy a container with it
-all: build-native build-linux docker
+all: bin-all docker-all
+
+# build a clean image an container
+docker-all: docker-image-clean docker-image docker-container
 
 dep:
 	go get -u github.com/stretchr/testify/assert
 
-# build a clean image an container
-docker: docker-image-clean docker-image docker-container
-
+bin-all: bin-clean bin-init bin-native bin-docker
 bin-init:
 	mkdir -p $(BIN_ROOT)
-bin-del:
+bin-clean:
 	rm -rf $(BIN_ROOT)
-
-
-build-all: bin-init build-native build-docker
-build-native: bin-init dep
+bin-version:
+	cp version $(BIN_ROOT)/${BINARY_NATIVE}_version
+bin-native: bin-init dep bin-version
 	# for devs
 	CGO_ENABLED=0 GOOS=$(OS_NAME) GOARCH=$(OS_ARCH) go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_NATIVE} .
-build-docker: bin-init dep
+bin-docker: bin-init dep bin-version
 	# for docker
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_DOCKER} .
 
 run-native:
 	$(BINARY_NATIVE)
+run-docker:
+	###
 
 # execute all tests
 test: dep
