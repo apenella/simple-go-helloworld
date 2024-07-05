@@ -20,7 +20,10 @@ BINARY_NATIVE_WHICH=$(shell command -v $(BINARY_NATIVE))
 BINARY_DOCKER=$(NAME)_linux_amd64
 BINARY_DOCKER_WHICH=$(shell command -v $(BINARY_DOCKER))
 
-VERSION=`cat version`
+VERSION_SEMVAR=version_semver
+VERSION_COMMIT=version_commit
+
+VERSION=`cat $(VERSION_SEMVAR)`
 COMMIT=`git rev-parse --short HEAD || echo "unknown"`
 
 LDFLAGS=-ldflags "-X simple-go-helloworld/release.Version=${VERSION} -X simple-go-helloworld/release.Commit=${COMMIT}"
@@ -60,7 +63,13 @@ bin-init:
 bin-clean:
 	rm -rf $(BIN_ROOT)
 bin-version:
-	cp version $(BIN_ROOT)/${BINARY_NATIVE}_version
+	# calculate it
+	rm -f $(VERSION_COMMIT)
+	@echo $(COMMIT) >> version_commit
+	cp version_commit $(BIN_ROOT)/${BINARY_NATIVE}_version_commit
+	# version is manual by dev to decide.
+	cp version_semver $(BIN_ROOT)/${BINARY_NATIVE}_version_semver
+	
 bin-native: bin-init dep bin-version
 	# for devs
 	CGO_ENABLED=0 GOOS=$(OS_NAME) GOARCH=$(OS_ARCH) go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_NATIVE} .

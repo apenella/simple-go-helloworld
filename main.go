@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -73,5 +75,12 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	http.HandleFunc("/", helloworld)
-	http.ListenAndServe(":80", nil)
+	err := http.ListenAndServe(":80", nil)
+
+	if errors.Is(err, http.ErrServerClosed) {
+		fmt.Printf("server closed\n")
+	} else if err != nil {
+		fmt.Printf("error starting server: %s\n", err)
+		os.Exit(1)
+	}
 }
