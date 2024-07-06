@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/apenella/simple-go-helloworld/release"
+	"github.com/gedw99/simple-go-helloworld/release"
 )
 
 type Context struct {

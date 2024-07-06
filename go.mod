@@ -1,4 +1,4 @@
-module github.com/apenella/simple-go-helloworld
+module github.com/gedw99/simple-go-helloworld
 
 go 1.12
 
