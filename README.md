@@ -8,10 +8,12 @@ You could build and deploy the web application, on you Docker host, using the `m
 make
 ```
 
-Once `make` finishes to run, the application will be accessible at http://localhost.
+Once `make` finishes to run, the application will be accessible at http://localhost:8080
+
 ![simple-go-helloworld](docs/simple-go-helloworld.png)
 
 ## Makefile targets
+
 - **all**: builds the application and run it on Docker host. 
 - **docker**: runs the application on Docker host.
 - **build**: builds the application.

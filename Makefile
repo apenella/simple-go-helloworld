@@ -57,12 +57,12 @@ print:
 	@echo ""
 
 # build the binary and deploy a container with it
-all: bin-all docker-all
+all: dep bin-all docker-all
 
 # build a clean image an container
 docker-all: docker-image-clean docker-image docker-container
 
-dep:
+dep: dep-bin
 	go get -u github.com/stretchr/testify/assert
 dep-init:
 	mkdir -p $(DEP_ROOT)
@@ -75,7 +75,6 @@ dep-bin: dep-init
 	go install github.com/google/gops@v0.3.28
 	cp $(GOPATH)/bin/gops $(DEP_ROOT)/gops
 	#rm -f $(GOPATH)/bin/gops
-
 
 
 mod-tidy:
@@ -107,13 +106,14 @@ bin-docker: bin-init dep bin-version
 	cp version_semver $(BIN_ROOT)/${BINARY_DOCKER}_version_semver
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_DOCKER} .
 
-
 run-native:
 	@echo "http://localhost:$(VAR_BIND)"
 	
 	$(BINARY_NATIVE)
 run-docker:
-	###
+
+run-gops:
+	gops
 
 curl:
 	curl http://localhost:8080/
