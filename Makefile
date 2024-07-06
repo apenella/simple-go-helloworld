@@ -2,24 +2,27 @@
 
 .DEFAULT_GOAL: print
 
-NAME=simple-go-helloworld
-MOD=github.com/gedw99/simple-go-helloworld
-BIND=8080
+# These are the onyl variables to change in the Makefile. 
+# Everything else is generic
+VAR_NAME=simple-go-helloworld
+VAR_MOD=github.com/gedw99/simple-go-helloworld
+VAR_BIND=8080
 
 # os name and arch
 OS_NAME=$(shell go env GOOS)
 OS_ARCH=$(shell go env GOARCH)
 
 BIN_ROOT=$(PWD)/.bin
-export PATH:=$(PATH):$(BIN_ROOT)
+DEP_ROOT=$(PWD)/.dep
+export PATH:=$(PATH):$(BIN_ROOT):DEP_ROOT
 
-BINARY_NATIVE=$(NAME)_$(OS_NAME)_$(OS_ARCH)
+BINARY_NATIVE=$(VAR_NAME)_$(OS_NAME)_$(OS_ARCH)
 ifeq ($(OS_NAME),windows)
-	BINARY_NATIVE=$(NAME)_$(OS_NAME)_$(OS_ARCH).exe
+	BINARY_NATIVE=$(VAR_NAME)_$(OS_NAME)_$(OS_ARCH).exe
 endif
 BINARY_NATIVE_WHICH=$(shell command -v $(BINARY_NATIVE))
 
-BINARY_DOCKER=$(NAME)_linux_amd64
+BINARY_DOCKER=$(VAR_NAME)_linux_amd64
 BINARY_DOCKER_WHICH=$(shell command -v $(BINARY_DOCKER))
 
 VERSION_SEMVAR=version_semver
@@ -28,18 +31,19 @@ VERSION_COMMIT=version_commit
 VERSION=$(shell cat $(VERSION_SEMVAR))
 COMMIT=$(shell git rev-parse --short HEAD || echo "unknown")
 
-LDFLAGS=-ldflags "-X $(MOD)/release.Version=${VERSION} -X $(MOD)/release.Commit=${COMMIT}"
+LDFLAGS=-ldflags "-X $(VAR_MOD)/release.Version=${VERSION} -X $(VAR_MOD)/release.Commit=${COMMIT}"
 
 print:
 	@echo ""
-	@echo "NAME:                   $(NAME)"
-	@echo "MOD:                    $(MOD)"
-	@echo "BIND:                   $(BIND)"
+	@echo "VAR_NAME:                   $(VAR_NAME)"
+	@echo "VAR_MOD:                    $(VAR_MOD)"
+	@echo "VAR_BIND:                   $(VAR_BIND)"
 	@echo ""
 	@echo "OS_NAME:                $(OS_NAME)"
 	@echo "OS_ARCH:                $(OS_ARCH)"
 	@echo ""
 	@echo "BIN_ROOT:               $(BIN_ROOT)"
+	@echo "DEP_ROOT:               $(DEP_ROOT)"
 	@echo ""
 	@echo "BINARY_NATIVE:          $(BINARY_NATIVE)"
 	@echo "BINARY_NATIVE_WHICH:    $(BINARY_NATIVE_WHICH)"
@@ -60,6 +64,20 @@ docker-all: docker-image-clean docker-image docker-container
 
 dep:
 	go get -u github.com/stretchr/testify/assert
+dep-init:
+	mkdir -p $(DEP_ROOT)
+dep-del:
+	rm -rf $(DEP_ROOT)
+dep-bin: dep-init
+	# bins that we need 
+	# https://github.com/google/gops
+	# https://github.com/google/gops/releases/tag/v0.3.28
+	go install github.com/google/gops@v0.3.28
+	cp $(GOPATH)/bin/gops $(DEP_ROOT)/gops
+	#rm -f $(GOPATH)/bin/gops
+
+
+
 mod-tidy:
 	go mod tidy
 mod-up:
@@ -91,7 +109,7 @@ bin-docker: bin-init dep bin-version
 
 
 run-native:
-	@echo "http://localhost:$(BIND)"
+	@echo "http://localhost:$(VAR_BIND)"
 	
 	$(BINARY_NATIVE)
 run-docker:
@@ -106,13 +124,13 @@ test: dep
 
 # create a docker image to run the binary
 docker-image:
-	docker buildx build --tag ${NAME} --tag ${NAME}:${VERSION} .
+	docker buildx build --tag ${VAR_NAME} --tag ${VAR_NAME}:${VERSION} .
 # create a container to run the binary.
 docker-container:
-	docker run -d --name ${NAME} -p 80:80 ${NAME}
+	docker run -d --name ${VAR_NAME} -p 80:80 ${VAR_NAME}
 # clean the containers
 docker-container-clean:
-	docker ps -a | grep ${NAME} | tr -s ' ' | cut -d " " -f1 | while read c; do docker stop $$c; docker rm -v $$c; done
+	docker ps -a | grep ${VAR_NAME} | tr -s ' ' | cut -d " " -f1 | while read c; do docker stop $$c; docker rm -v $$c; done
 # clear docker images
 docker-image-clean: docker-container-clean
-	docker images | grep $(NAME) | tr -s ' ' | cut -d " " -f2 | while read t; do docker rmi ${NAME}:$$t; done
+	docker images | grep $(VAR_NAME) | tr -s ' ' | cut -d " " -f2 | while read t; do docker rmi ${VAR_NAME}:$$t; done
