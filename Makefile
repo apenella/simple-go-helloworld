@@ -32,6 +32,7 @@ LDFLAGS=-ldflags "-X $(MOD)/release.Version=${VERSION} -X $(MOD)/release.Commit=
 print:
 	@echo ""
 	@echo "NAME:                   $(NAME)"
+	@echo "MOD:                    $(MOD)"
 	@echo ""
 	@echo "OS_NAME:                $(OS_NAME)"
 	@echo "OS_ARCH:                $(OS_ARCH)"
