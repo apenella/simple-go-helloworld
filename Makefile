@@ -3,7 +3,8 @@
 .DEFAULT_GOAL: print
 
 NAME=simple-go-helloworld
-MOD=github.com/apenella/simple-go-helloworld
+MOD=github.com/gedw99/simple-go-helloworld
+BIND=8080
 
 # os name and arch
 OS_NAME=$(shell go env GOOS)
@@ -33,6 +34,7 @@ print:
 	@echo ""
 	@echo "NAME:                   $(NAME)"
 	@echo "MOD:                    $(MOD)"
+	@echo "BIND:                   $(BIND)"
 	@echo ""
 	@echo "OS_NAME:                $(OS_NAME)"
 	@echo "OS_ARCH:                $(OS_ARCH)"
@@ -58,6 +60,13 @@ docker-all: docker-image-clean docker-image docker-container
 
 dep:
 	go get -u github.com/stretchr/testify/assert
+mod-tidy:
+	go mod tidy
+mod-up:
+	go mod tidy
+	go run github.com/oligot/go-mod-upgrade@latest
+	go mod tidy
+
 
 bin-all: bin-clean bin-init bin-native bin-docker
 bin-init:
@@ -80,7 +89,10 @@ bin-docker: bin-init dep bin-version
 	cp version_semver $(BIN_ROOT)/${BINARY_DOCKER}_version_semver
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_DOCKER} .
 
+
 run-native:
+	@echo "http://localhost:$(BIND)"
+	
 	$(BINARY_NATIVE)
 run-docker:
 	###

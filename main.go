@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
+
+	"github.com/google/gops/agent"
 
 	"github.com/gedw99/simple-go-helloworld/release"
 )
@@ -73,6 +76,10 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	if err := agent.Listen(agent.Options{}); err != nil {
+		log.Fatal(err)
+	}
+
 	http.HandleFunc("/", helloworld)
 	err := http.ListenAndServe(":8080", nil)
 	if errors.Is(err, http.ErrServerClosed) {
