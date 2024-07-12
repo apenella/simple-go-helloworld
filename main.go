@@ -1,10 +1,15 @@
 package main
 
 import (
+	"errors"
+	"flag"
+	"fmt"
 	"html/template"
-	"os"
+	"log"
 	"net/http"
-	"simple-go-helloworld/release"
+	"os"
+
+	"github.com/apenella/simple-go-helloworld/release"
 )
 
 type Context struct {
@@ -15,18 +20,18 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 	var hostname string
 	var err error
 
-	hostname, err = os.Hostname() 
+	hostname, err = os.Hostname()
 	if err != nil {
 		hostname = "unknown"
 	}
 
-	context := Context { 
-	 	Version: release.Version,
-	 	Commit: release.Commit,
-	 	Hostname: hostname,
+	context := Context{
+		Version:  release.Version,
+		Commit:   release.Commit,
+		Hostname: hostname,
 	}
 
-	 page := `
+	page := `
 		<html>
 			<head>
 				<title>Simple Go Helloworld</title>
@@ -66,10 +71,22 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 
 	t := template.New("Simple Go Helloworld")
 	t, _ = t.Parse(page)
-	t.Execute(w, context)
+	_ = t.Execute(w, context)
 }
 
 func main() {
+
+	listenPort := flag.String("listen-port", ":8080", "the port to listen on")
+	flag.Parse()
+
+	log.Printf("Server started on port %s\n", *listenPort)
+
 	http.HandleFunc("/", helloworld)
-	http.ListenAndServe(":80", nil)
+	err := http.ListenAndServe(*listenPort, nil)
+	if errors.Is(err, http.ErrServerClosed) {
+		fmt.Printf("server closed\n")
+	} else if err != nil {
+		fmt.Printf("error starting server: %s\n", err)
+		os.Exit(1)
+	}
 }
