@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/gops/agent"
 
-	"github.com/gedw99/simple-go-helloworld/release"
+	"github.com/apenella/simple-go-helloworld/release"
 )
 
 type Context struct {

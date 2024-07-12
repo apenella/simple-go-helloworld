@@ -4,9 +4,9 @@
 
 # These are the onyl variables to change in the Makefile. 
 # Everything else is generic
-VAR_NAME=simple-go-helloworld
-VAR_MOD=github.com/gedw99/simple-go-helloworld
-VAR_BIND=8080
+APP_NAME=simple-go-helloworld
+MODULE_NAME=github.com/apenella/simple-go-helloworld
+LISTEN_ADDRESS=8080
 
 # os name and arch
 OS_NAME=$(shell go env GOOS)
@@ -16,13 +16,13 @@ BIN_ROOT=$(PWD)/.bin
 DEP_ROOT=$(PWD)/.dep
 export PATH:=$(PATH):$(BIN_ROOT):DEP_ROOT
 
-BINARY_NATIVE=$(VAR_NAME)_$(OS_NAME)_$(OS_ARCH)
+BINARY_NATIVE=$(APP_NAME)_$(OS_NAME)_$(OS_ARCH)
 ifeq ($(OS_NAME),windows)
-	BINARY_NATIVE=$(VAR_NAME)_$(OS_NAME)_$(OS_ARCH).exe
+	BINARY_NATIVE=$(APP_NAME)_$(OS_NAME)_$(OS_ARCH).exe
 endif
 BINARY_NATIVE_WHICH=$(shell command -v $(BINARY_NATIVE))
 
-BINARY_DOCKER=$(VAR_NAME)_linux_amd64
+BINARY_DOCKER=$(APP_NAME)_linux_amd64
 BINARY_DOCKER_WHICH=$(shell command -v $(BINARY_DOCKER))
 
 VERSION_SEMVAR=version_semver
@@ -31,13 +31,13 @@ VERSION_COMMIT=version_commit
 VERSION=$(shell cat $(VERSION_SEMVAR))
 COMMIT=$(shell git rev-parse --short HEAD || echo "unknown")
 
-LDFLAGS=-ldflags "-X $(VAR_MOD)/release.Version=${VERSION} -X $(VAR_MOD)/release.Commit=${COMMIT}"
+LDFLAGS=-ldflags "-X $(MODULE_NAME)/release.Version=${VERSION} -X $(MODULE_NAME)/release.Commit=${COMMIT}"
 
 print:
 	@echo ""
-	@echo "VAR_NAME:                   $(VAR_NAME)"
-	@echo "VAR_MOD:                    $(VAR_MOD)"
-	@echo "VAR_BIND:                   $(VAR_BIND)"
+	@echo "APP_NAME:              $(APP_NAME)"
+	@echo "MODULE_NAME:           $(MODULE_NAME)"
+	@echo "LISTEN_ADDRESS:        $(LISTEN_ADDRESS)"
 	@echo ""
 	@echo "OS_NAME:                $(OS_NAME)"
 	@echo "OS_ARCH:                $(OS_ARCH)"
@@ -107,7 +107,7 @@ bin-docker: bin-init dep bin-version
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_DOCKER} .
 
 run-native:
-	@echo "http://localhost:$(VAR_BIND)"
+	@echo "http://localhost:$(LISTEN_ADDRESS)"
 	
 	$(BINARY_NATIVE)
 run-docker:
@@ -124,13 +124,13 @@ test: dep
 
 # create a docker image to run the binary
 docker-image:
-	docker buildx build --tag ${VAR_NAME} --tag ${VAR_NAME}:${VERSION} .
+	docker buildx build --tag ${APP_NAME} --tag ${APP_NAME}:${VERSION} .
 # create a container to run the binary.
 docker-container:
-	docker run -d --name ${VAR_NAME} -p 80:80 ${VAR_NAME}
+	docker run --rm --detach --name ${APP_NAME} -p 80:$(LISTEN_ADDRESS) ${APP_NAME}
 # clean the containers
 docker-container-clean:
-	docker ps -a | grep ${VAR_NAME} | tr -s ' ' | cut -d " " -f1 | while read c; do docker stop $$c; docker rm -v $$c; done
+	docker ps -a | grep ${APP_NAME} | tr -s ' ' | cut -d " " -f1 | while read c; do docker stop $$c; docker rm -v $$c; done
 # clear docker images
 docker-image-clean: docker-container-clean
-	docker images | grep $(VAR_NAME) | tr -s ' ' | cut -d " " -f2 | while read t; do docker rmi ${VAR_NAME}:$$t; done
+	docker images | grep $(APP_NAME) | tr -s ' ' | cut -d " " -f2 | while read t; do docker rmi ${APP_NAME}:$$t; done

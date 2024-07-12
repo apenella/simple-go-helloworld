@@ -5,7 +5,7 @@ MAINTAINER Aleix Penella (aleix.penella [at] gmail.com)
 WORKDIR /
 
 # copy the binary into container
-COPY ./.bin/simple-go-helloworld_linux_amd64 /
+COPY ./.bin/simple-go-helloworld_linux_amd64 /simple-go-helloworld
 COPY ./.bin/simple-go-helloworld_linux_amd64_version_commit /
 COPY ./.bin/simple-go-helloworld_linux_amd64_version_semver /
 
