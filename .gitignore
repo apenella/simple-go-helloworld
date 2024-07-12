@@ -6,6 +6,8 @@
 *.un~
 pkg/
 
+.bin
+
 # Berkshelf
 .vagrant
 /cookbooks
@@ -16,10 +18,8 @@ Gemfile.lock
 bin/*
 .bundle/*
 
-.kitchen/
-.kitchen.local.yml
+# mine
 
 *.log
-
-# binaries
-simple-go-helloworld
+.bin
+.dep
