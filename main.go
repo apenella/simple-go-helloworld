@@ -2,13 +2,12 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/google/gops/agent"
 
 	"github.com/apenella/simple-go-helloworld/release"
 )
@@ -72,16 +71,18 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 
 	t := template.New("Simple Go Helloworld")
 	t, _ = t.Parse(page)
-	t.Execute(w, context)
+	_ = t.Execute(w, context)
 }
 
 func main() {
-	if err := agent.Listen(agent.Options{}); err != nil {
-		log.Fatal(err)
-	}
+
+	listenPort := flag.String("listen-port", ":8080", "the port to listen on")
+	flag.Parse()
+
+	log.Printf("Server started on port %s\n", *listenPort)
 
 	http.HandleFunc("/", helloworld)
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(*listenPort, nil)
 	if errors.Is(err, http.ErrServerClosed) {
 		fmt.Printf("server closed\n")
 	} else if err != nil {

@@ -1,136 +1,63 @@
 # MAKEFILE for simple-go-helloworld
 
-.DEFAULT_GOAL: print
+.DEFAULT_GOAL: help
 
 # These are the onyl variables to change in the Makefile. 
 # Everything else is generic
 APP_NAME=simple-go-helloworld
-MODULE_NAME=github.com/apenella/simple-go-helloworld
+MODULE_NAME=github.com/apenella/$(APP_NAME)
 LISTEN_ADDRESS=8080
 
 # os name and arch
 OS_NAME=$(shell go env GOOS)
 OS_ARCH=$(shell go env GOARCH)
 
-BIN_ROOT=$(PWD)/.bin
-DEP_ROOT=$(PWD)/.dep
-export PATH:=$(PATH):$(BIN_ROOT):DEP_ROOT
+BIN_DIR=$(PWD)/.bin
+export PATH:=$(PATH):$(BIN_DIR):DEP_DIR
 
-BINARY_NATIVE=$(APP_NAME)_$(OS_NAME)_$(OS_ARCH)
+BINARY_NAME=$(APP_NAME)_$(OS_NAME)_$(OS_ARCH)
 ifeq ($(OS_NAME),windows)
-	BINARY_NATIVE=$(APP_NAME)_$(OS_NAME)_$(OS_ARCH).exe
+	BINARY_NAME=$(APP_NAME)_$(OS_NAME)_$(OS_ARCH).exe
 endif
-BINARY_NATIVE_WHICH=$(shell command -v $(BINARY_NATIVE))
 
-BINARY_DOCKER=$(APP_NAME)_linux_amd64
-BINARY_DOCKER_WHICH=$(shell command -v $(BINARY_DOCKER))
+APP_VERSION=$(shell git describe --tags --abbrev=0 || cat version)
+COMMIT_SHA=$(shell git rev-parse --short HEAD || echo "unknown")
 
-VERSION_SEMVAR=version_semver
-VERSION_COMMIT=version_commit
+LDFLAGS=-ldflags "-X $(MODULE_NAME)/release.Version=$(APP_VERSION) -X $(MODULE_NAME)/release.Commit=$(COMMIT_SHA)"
 
-VERSION=$(shell cat $(VERSION_SEMVAR))
-COMMIT=$(shell git rev-parse --short HEAD || echo "unknown")
+help: ## Lists available targets
+	@echo
+	@echo "Makefile usage:"
+	@grep -E '^[a-zA-Z1-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[1;32m%-20s\033[0m %s\n", $$1, $$2}' | sort
+	@echo
 
-LDFLAGS=-ldflags "-X $(MODULE_NAME)/release.Version=${VERSION} -X $(MODULE_NAME)/release.Commit=${COMMIT}"
+init: ## Initialize the project
+	go mod init $(MODULE_NAME) || true
+	mkdir -p $(BIN_DIR)
 
-print:
-	@echo ""
-	@echo "APP_NAME:              $(APP_NAME)"
-	@echo "MODULE_NAME:           $(MODULE_NAME)"
-	@echo "LISTEN_ADDRESS:        $(LISTEN_ADDRESS)"
-	@echo ""
-	@echo "OS_NAME:                $(OS_NAME)"
-	@echo "OS_ARCH:                $(OS_ARCH)"
-	@echo ""
-	@echo "BIN_ROOT:               $(BIN_ROOT)"
-	@echo "DEP_ROOT:               $(DEP_ROOT)"
-	@echo ""
-	@echo "BINARY_NATIVE:          $(BINARY_NATIVE)"
-	@echo "BINARY_NATIVE_WHICH:    $(BINARY_NATIVE_WHICH)"
-	@echo ""
-	@echo "BINARY_DOCKER:          $(BINARY_DOCKER)"
-	@echo "BINARY_DOCKER_WHICH:    $(BINARY_DOCKER_WHICH)"
-	@echo ""
-	@echo "VERSION:                $(VERSION)"
-	@echo "COMMIT:                 $(COMMIT)"
-	@echo "LDFLAGS:                $(LDFLAGS)"
-	@echo ""
+update: ## Update dependencies
+	go get -u ./...
 
-# build the binary and deploy a container with it
-all: dep bin-all docker-all
-
-# build a clean image an container
-docker-all: docker-image-clean docker-image docker-container
-
-dep: dep-bin
-	go get -u github.com/stretchr/testify/assert
-dep-init:
-	mkdir -p $(DEP_ROOT)
-dep-del:
-	rm -rf $(DEP_ROOT)
-dep-bin: dep-init
-	# bins that we need 
-	# https://github.com/google/gops
-	# https://github.com/google/gops/releases/tag/v0.3.28
-	go install github.com/google/gops@v0.3.28
-	cp $(GOPATH)/bin/gops $(DEP_ROOT)/gops
-	#rm -f $(GOPATH)/bin/gops
-
-
-mod-tidy:
+modules: ## Handle module dependencies
 	go mod tidy
-mod-up:
-	go mod tidy
-	go run github.com/oligot/go-mod-upgrade@latest
-	go mod tidy
+	go mod verify	
 
+clean: ## Clean the project
+	rm -rf $(BIN_DIR)
 
-bin-all: bin-clean bin-init bin-native bin-docker
-bin-init:
-	mkdir -p $(BIN_ROOT)
-bin-clean:
-	rm -rf $(BIN_ROOT)
-bin-version:
-	# calculate it
-	rm -f $(VERSION_COMMIT)
-	@echo $(COMMIT) >> version_commit
-bin-native: bin-init dep bin-version
-	# for devs
-	cp version_commit $(BIN_ROOT)/${BINARY_NATIVE}_version_commit
-	cp version_semver $(BIN_ROOT)/${BINARY_NATIVE}_version_semver
+test: modules ## Execute tests
+	go test ./... -count=1 -v
 
-	CGO_ENABLED=0 GOOS=$(OS_NAME) GOARCH=$(OS_ARCH) go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_NATIVE} .
-bin-docker: bin-init dep bin-version
-	# for docker
-	cp version_commit $(BIN_ROOT)/${BINARY_DOCKER}_version_commit
-	cp version_semver $(BIN_ROOT)/${BINARY_DOCKER}_version_semver
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ${LDFLAGS} -a -o $(BIN_ROOT)/${BINARY_DOCKER} .
+build-binary: test clean modules ## Build application binary
+	CGO_ENABLED=0 GOOS=$(OS_NAME) GOARCH=$(OS_ARCH) go build ${LDFLAGS} -a -o $(BIN_DIR)/${BINARY_NAME} .
 
-run-native:
-	@echo "http://localhost:$(LISTEN_ADDRESS)"
-	
-	$(BINARY_NATIVE)
-run-docker:
+build-docker: build-binary ## Create a docker image to run the binary
+	docker build --build-arg listen_port=$(LISTEN_ADDRESS) --tag $(APP_NAME):$(APP_VERSION) .
 
-run-gops:
-	gops
+run: ## Run the application in a container
+	docker run --rm --name $(APP_NAME) -p 80:$(LISTEN_ADDRESS) $(APP_NAME):$(APP_VERSION) --listen-port ":$(LISTEN_ADDRESS)"
 
-curl:
-	curl http://localhost:8080/
+build-run: build-docker run ## Build and run the application
 
-# execute all tests
-test: dep
-	go test ./...
-
-# create a docker image to run the binary
-docker-image:
-	docker buildx build --tag ${APP_NAME} --tag ${APP_NAME}:${VERSION} .
-# create a container to run the binary.
-docker-container:
-	docker run --rm --detach --name ${APP_NAME} -p 80:$(LISTEN_ADDRESS) ${APP_NAME}
-# clean the containers
-docker-container-clean:
-	docker ps -a | grep ${APP_NAME} | tr -s ' ' | cut -d " " -f1 | while read c; do docker stop $$c; docker rm -v $$c; done
-# clear docker images
-docker-image-clean: docker-container-clean
-	docker images | grep $(APP_NAME) | tr -s ' ' | cut -d " " -f2 | while read t; do docker rmi ${APP_NAME}:$$t; done
+stop: ## Stop the application
+	docker stop $(APP_NAME)
